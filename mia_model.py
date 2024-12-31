@@ -12,6 +12,8 @@ class MIAModel:
     def run(self, text):
         pass
 
+
+
 class GPTNeoX(MIAModel):
     def __init__(self, model_size):
         super().__init__(model_size)
@@ -35,7 +37,6 @@ class GPTNeoX(MIAModel):
         logging.log(logging.INFO, "Running LLM on Inputted Member/Non-Member Text")
         data_loader = DataLoader(text, batch_size=batch_size, shuffle=False)
         all_texts = [text for batch_texts in data_loader for text in batch_texts]
-
         # Tokenize all texts at once
         tokenized_inputs = self.tokenizer(
             all_texts,
@@ -58,14 +59,11 @@ class GPTNeoX(MIAModel):
 
         # Create a DataLoader to yield batches
         data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-
-        all_outputs = []
         feature_value_dict = {mia_method.name:[]}
         for input_ids_batch, attention_mask_batch, target_labels_batch in tqdm(data_loader):
             # Forward pass through the model
             outputs = self.model(input_ids=input_ids_batch, attention_mask=attention_mask_batch, labels=target_labels_batch)
-            if mia_method.name == "Loss":
-                feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, target_labels_batch))
+            feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, target_labels_batch))
         return feature_value_dict
 
 
