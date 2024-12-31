@@ -8,6 +8,7 @@ class MIA:
 class LossMIA(MIA):
     def __init__(self):
         super().__init__()
+        self.name = "Loss"
 
     def feature_compute(self, batch_logits, tokenized_inputs, target_labels):
         shift_logits = batch_logits[:, :-1, :].contiguous()
