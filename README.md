@@ -15,3 +15,4 @@ We implement the following MIA methods:
 
 
 ### How to run the code
+Please refer to the test.py file for how to run the code.
