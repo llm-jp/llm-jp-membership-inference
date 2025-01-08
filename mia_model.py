@@ -63,7 +63,7 @@ class GPTNeoX(MIAModel):
         for input_ids_batch, attention_mask_batch, target_labels_batch in tqdm(data_loader):
             # Forward pass through the model
             outputs = self.model(input_ids=input_ids_batch, attention_mask=attention_mask_batch, labels=target_labels_batch)
-            feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, target_labels_batch))
+            feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer))
         return feature_value_dict
 
 

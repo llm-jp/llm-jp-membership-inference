@@ -13,7 +13,7 @@ class LossMIA(MIA):
     def __init__(self):
         super().__init__("Loss")
 
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer):
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer):
         shift_logits = batch_logits[:, :-1, :].contiguous()
         labels = target_labels[:, 1:].contiguous()
         loss_fct = CrossEntropyLoss(reduction='none')
@@ -32,7 +32,7 @@ class ZlibMIA(MIA):
     def __init__(self):
         super().__init__("Zlib")
 
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer):
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         shift_logits = batch_logits[:, :-1, :].contiguous()
         labels = target_labels[:, 1:].contiguous()
         loss_fct = CrossEntropyLoss(reduction='none')
@@ -52,7 +52,7 @@ class GradientMIA(MIA):
     """
     def __init__(self):
         super().__init__("Gradient")
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer):
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         shift_logits = batch_logits[:, :-1, :].contiguous()
         labels = target_labels[:, 1:].contiguous()
         loss_fct = CrossEntropyLoss(reduction='none')
@@ -75,7 +75,7 @@ class GradientMIA(MIA):
 class PerplexityMIA(MIA):
     def __init__(self):
         super().__init__("Perplexity")
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer):
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         shift_logits = batch_logits[:, :-1, :].contiguous()
         labels = target_labels[:, 1:].contiguous()
         loss_fct = CrossEntropyLoss(reduction='none')
@@ -91,10 +91,10 @@ class MinKMIA(MIA):
     def __init__(self, k=0.2):
         super().__init__("MinK")
         self.k = k
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer, k=0.2):
-        batch_input_ids = tokenized_inputs["input_ids"][:, 1:].unsqueeze(-1)
-        target_labels = tokenized_inputs["input_ids"].clone()
-        target_labels[tokenized_inputs["attention_mask"] == 0] = -100
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer, k=0.2):
+        batch_input_ids = tokenized_inputs[:, 1:].unsqueeze(-1)
+        target_labels = tokenized_inputs.clone()
+        target_labels[attention_mask == 0] = -100
         batch_probs = F.softmax(batch_logits[:, :-1].float(), dim=-1)
         batch_log_probs = F.log_softmax(batch_logits[:, :-1].float(), dim=-1)
         mask = target_labels[:, 1:] != -100
@@ -131,10 +131,10 @@ class MinKPlusMIA(MIA):
     def __init__(self, k=0.2):
         super().__init__("MinKPlus")
         self.k = k
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer):
-        batch_input_ids = tokenized_inputs["input_ids"][:, 1:].unsqueeze(-1)
-        target_labels = tokenized_inputs["input_ids"].clone()
-        target_labels[tokenized_inputs["attention_mask"] == 0] = -100
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer):
+        batch_input_ids = tokenized_inputs[:, 1:].unsqueeze(-1)
+        target_labels = tokenized_inputs.clone()
+        target_labels[attention_mask == 0] = -100
         batch_probs = F.softmax(batch_logits[:, :-1].float(), dim=-1)
         batch_log_probs = F.log_softmax(batch_logits[:, :-1].float(), dim=-1)
         mask = target_labels[:, 1:] != -100
@@ -169,24 +169,24 @@ class MinKPlusMIA(MIA):
 class RecallMIA(MIA):
     def __init__(self):
         super().__init__("Recall")
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer):
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         pass
 
 class DCPDDMIA(MIA):
     def __init__(self):
         super().__init__("DCPDD")
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer):
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         pass
 
 class SaMIA(MIA):
     def __init__(self):
         super().__init__("SA")
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer):
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         pass
 
 class PACMIA(MIA):
     def __init__(self):
         super().__init__("PAC")
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer):
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         pass
 
