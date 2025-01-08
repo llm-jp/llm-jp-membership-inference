@@ -88,8 +88,9 @@ class PerplexityMIA(MIA):
         return perp_value_list
 
 class MinKMIA(MIA):
-    def __init__(self):
+    def __init__(self, k=0.2):
         super().__init__("MinK")
+        self.k = k
     def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer, k=0.2):
         batch_input_ids = tokenized_inputs["input_ids"][:, 1:].unsqueeze(-1)
         target_labels = tokenized_inputs["input_ids"].clone()
@@ -116,7 +117,7 @@ class MinKMIA(MIA):
         batch_mink_plus_avg = []
         batch_mink_avg = []
         for i, length in enumerate(token_length):
-            caculate_length = int(length * 0.2) if length > 5 else length
+            caculate_length = int(length * self.k) if length > 5 else length
             front_values = sorted_mink_plus[i, :caculate_length]
             avg = torch.mean(front_values.float()).item()
             batch_mink_plus_avg.append(avg)
@@ -127,10 +128,10 @@ class MinKMIA(MIA):
 
 
 class MinKPlusMIA(MIA):
-    def __init__(self):
+    def __init__(self, k=0.2):
         super().__init__("MinKPlus")
-
-    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer, k=0.2):
+        self.k = k
+    def feature_compute(self, batch_logits, tokenized_inputs, target_labels, tokenizer):
         batch_input_ids = tokenized_inputs["input_ids"][:, 1:].unsqueeze(-1)
         target_labels = tokenized_inputs["input_ids"].clone()
         target_labels[tokenized_inputs["attention_mask"] == 0] = -100
@@ -156,7 +157,7 @@ class MinKPlusMIA(MIA):
         batch_mink_plus_avg = []
         batch_mink_avg = []
         for i, length in enumerate(token_length):
-            caculate_length = int(length * 0.2) if length > 5 else length
+            caculate_length = int(length * self.k) if length > 5 else length
             front_values = sorted_mink_plus[i, :caculate_length]
             avg = torch.mean(front_values.float()).item()
             batch_mink_plus_avg.append(avg)
