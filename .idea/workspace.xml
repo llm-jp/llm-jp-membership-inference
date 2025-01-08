@@ -5,10 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fae40d9f-52ab-42d7-8098-4e7855776909" name="変更" comment="">
-      <change afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mia_method.py" beforeDir="false" afterPath="$PROJECT_DIR$/mia_method.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mia_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/mia_model.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,7 +67,7 @@
       <option name="presentableId" value="Default" />
       <updated>1735624337789</updated>
       <workItem from="1735624338915" duration="7319000" />
-      <workItem from="1735631882765" duration="5396000" />
+      <workItem from="1735631882765" duration="10577000" />
     </task>
     <servers />
   </component>
