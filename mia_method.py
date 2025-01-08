@@ -2,9 +2,14 @@ from torch.nn import CrossEntropyLoss
 import zlib
 import torch
 from torch.nn import functional as F
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from bleurt_pytorch import BleurtConfig, BleurtForSequenceClassification, BleurtTokenizer
+from tqdm import tqdm
+import numpy as np
 class MIA:
-    def __init__(self, name):
+    def __init__(self, name, type="gray"):
         self.name = name
+        self.type = type
 
 class LossMIA(MIA):
     """
@@ -45,6 +50,19 @@ class ZlibMIA(MIA):
                 bytes(tokenizer.decode(tokenized_inputs[idx], skip_special_tokens=True), "utf-8"))))
             zlib_value_list.append(zlib_value.item())
         return zlib_value_list
+
+class ReferenceMIA(MIA):
+    def __init__(self, reference_model):
+        super().__init__("Refer")
+        self.refer_model = AutoModelForCausalLM.from_pretrained(reference_model,
+                                                                trust_remote_code=True,
+                                                                torch_dtype=torch.bfloat16,
+                                                                ).eval()
+        self.refer_tokenizer = AutoTokenizer.from_pretrained(reference_model)
+        self.refer_tokenizer.pad_token = self.refer_tokenizer.eos_token
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
+        pass
+
 
 class GradientMIA(MIA):
     """
@@ -179,10 +197,142 @@ class DCPDDMIA(MIA):
         pass
 
 class SaMIA(MIA):
-    def __init__(self):
-        super().__init__("SA")
-    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
-        pass
+    def __init__(self, generation_samples=10, input_length=128, temperature=0.8, generation_batch_size=11, max_mew_tokens=128):
+        super().__init__("SAMIA")
+        self.bleurt_model = BleurtForSequenceClassification.from_pretrained(
+            'lucadiliello/BLEURT-20')  # .cuda(args.refer_cuda)
+        self.bleurt_tokenizer = BleurtTokenizer.from_pretrained('lucadiliello/BLEURT-20')
+        self.bleurt_model.eval()
+        self.gen_samples = generation_samples
+        self.max_input_tokens = input_length
+        self.temperature = temperature
+        self.generation_batch_size = generation_batch_size
+        self.max_new_tokens = max_mew_tokens
+    def bleurt_score(self, reference, generations, args):
+        self.bleurt_model.eval()
+        with torch.no_grad():
+            inputs = self.bleurt_tokenizer([reference for i in range(len(generations))], generations, max_length=512,
+                               truncation=True, padding="max_length", return_tensors="pt")
+            inputs = {key: value.to(args.refer_cuda) for key, value in inputs.items()}
+            res = self.bleurt_model(**inputs).logits.flatten().tolist()
+        return res
+
+    def feature_compute(self, model, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer):
+        input_length = int(min(attention_mask.sum(dim=1)) / 2) if (
+                    tokenized_inputs["attention_mask"][0].sum() < self.max_input_tokens) else self.max_input_tokens
+        full_decoded = [[] for _ in range(self.generation_batch_size)]
+        for _ in tqdm(range(self.generation_batch_size)):
+            if _ == 0:
+                zero_temp_generation = model.generate(input_ids=tokenized_inputs["input_ids"][:, :input_length],
+                                                      attention_mask=tokenized_inputs["attention_mask"][:,
+                                                                     :input_length],
+                                                      temperature=0,
+                                                      max_new_tokens=self.max_new_tokens,
+                                                      )
+                decoded_sentences = tokenizer.batch_decode(zero_temp_generation["sequences"],
+                                                           skip_special_tokens=True)
+                for i in range(zero_temp_generation["sequences"].shape[0]):
+                    full_decoded[i].append(decoded_sentences[i])
+            else:
+                generations = model.generate(input_ids=tokenized_inputs[:, :input_length],
+                                             attention_mask=attention_mask[:, :input_length],
+                                             do_sample=True,
+                                             temperature=self.temperature,
+                                             max_new_tokens=self.max_new_tokens,
+                                             top_k=50,
+                                             )
+                decoded_sentences = self.tokenizer.batch_decode(generations["sequences"], skip_special_tokens=True)
+                for i in range(zero_temp_generation["sequences"].shape[0]):
+                    full_decoded[i].append(decoded_sentences[i])
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.bleurt_model.to(device)
+        samia_value_list = []
+        for batch_idx in range(zero_temp_generation["sequences"].shape[0]):
+            bleurt_value = np.array(
+                self.bleurt_score(full_decoded[batch_idx][0], full_decoded[batch_idx][1:],
+                             )).mean().item()
+            samia_value_list.append(bleurt_value)
+        self.bleurt_model.cpu()
+        return samia_value_list
+
+class CDDMIA(MIA):
+    def __init__(self, generation_samples=10, input_length=128, temperature=0.8, generation_batch_size=11,
+                 max_mew_tokens=128):
+        super().__init__("CDDMIA")
+        self.genertion_samples = generation_samples
+        self.gen_samples = generation_samples
+        self.max_input_tokens = input_length
+        self.temperature = temperature
+        self.generation_batch_size = generation_batch_size
+        self.max_new_tokens = max_mew_tokens
+
+    def levenshtein_distance(self, str1, str2):
+        if len(str1) > len(str2):
+            str1, str2 = str2, str1
+
+        distances = range(len(str1) + 1)
+        for index2, char2 in enumerate(str2):
+            new_distances = [index2 + 1]
+            for index1, char1 in enumerate(str1):
+                if char1 == char2:
+                    new_distances.append(distances[index1])
+                else:
+                    new_distances.append(1 + min((distances[index1], distances[index1 + 1], new_distances[-1])))
+            distances = new_distances
+
+        return distances[-1]
+
+    def strip_code(self, sample):
+        return sample.strip().split('\n\n\n')[0] if '\n\n\n' in sample else sample.strip().split('```')[0]
+
+    def tokenize_code(self, sample, tokenizer, length):
+        return tokenizer.encode(sample)[:length] if length else tokenizer.encode(sample)
+
+    def get_edit_distance_distribution_star(self, samples, gready_sample, tokenizer, length=100):
+        gready_sample = self.strip_code(gready_sample)
+        gs = self.tokenize_code(gready_sample, tokenizer, length)
+        num = []
+        max_length = len(gs)
+        for sample in samples:
+            sample = self.strip_code(sample)
+            s = self.tokenize_code(sample, tokenizer, length)
+            num.append(self.levenshtein_distance(gs, s))
+            max_length = max(max_length, len(s))
+        return num, max_length
+
+    def feature_compute(self, model, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer):
+        input_length = int(min(attention_mask.sum(dim=1)) / 2) if (
+                tokenized_inputs["attention_mask"][0].sum() < self.max_input_tokens) else self.max_input_tokens
+        full_decoded = [[] for _ in range(self.generation_batch_size)]
+        for _ in tqdm(range(self.generation_batch_size)):
+            if _ == 0:
+                zero_temp_generation = model.generate(input_ids=tokenized_inputs["input_ids"][:, :input_length],
+                                                      attention_mask=tokenized_inputs["attention_mask"][:,
+                                                                     :input_length],
+                                                      temperature=0,
+                                                      max_new_tokens=self.max_new_tokens,
+                                                      )
+                decoded_sentences = tokenizer.batch_decode(zero_temp_generation["sequences"],
+                                                           skip_special_tokens=True)
+                for i in range(zero_temp_generation["sequences"].shape[0]):
+                    full_decoded[i].append(decoded_sentences[i])
+            else:
+                generations = model.generate(input_ids=tokenized_inputs[:, :input_length],
+                                             attention_mask=attention_mask[:, :input_length],
+                                             do_sample=True,
+                                             temperature=self.temperature,
+                                             max_new_tokens=self.max_new_tokens,
+                                             top_k=50,
+                                             )
+                decoded_sentences = self.tokenizer.batch_decode(generations["sequences"], skip_special_tokens=True)
+                for i in range(zero_temp_generation["sequences"].shape[0]):
+                    full_decoded[i].append(decoded_sentences[i])
+        cdd_value_list = []
+        for batch_idx in range(zero_temp_generation["sequences"].shape[0]):
+            dist, ml = self.get_edit_distance_distribution_star(full_decoded[batch_idx][1:], full_decoded[batch_idx][0],
+                                                           tokenizer, length=1000)
+            cdd_value_list.append(sum(dist)/len(dist))
+        return cdd_value_list
 
 class PACMIA(MIA):
     def __init__(self):
