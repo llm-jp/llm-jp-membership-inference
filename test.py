@@ -3,7 +3,7 @@ from mia_model import GPTNeoX
 from mia_method import LossMIA
 from mia_method import MinKMIA
 from mia_method import MinKPlusMIA
-
+from mia_method import SaMIA
 
 test_data = WikiMIA("WikiMIA", length=64)
 model = GPTNeoX("70m")

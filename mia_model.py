@@ -12,8 +12,6 @@ class MIAModel:
     def run(self, text):
         pass
 
-
-
 class GPTNeoX(MIAModel):
     def __init__(self, model_size):
         super().__init__(model_size)
@@ -45,14 +43,11 @@ class GPTNeoX(MIAModel):
             padding=True,  # This will pad all sequences to the same length
             max_length=self.model.config.max_position_embeddings
         )
-
         # Move the tokenized data to the correct device
         input_ids = tokenized_inputs['input_ids'].to(self.device)
         attention_mask = tokenized_inputs['attention_mask'].to(self.device)
-
         # Prepare target labels
         target_labels = input_ids.clone().to(self.device)
-
         target_labels[attention_mask == 0] = -100
         # Create a TensorDataset
         dataset = TensorDataset(input_ids, attention_mask, target_labels)
@@ -65,7 +60,7 @@ class GPTNeoX(MIAModel):
                 outputs = self.model(input_ids=input_ids_batch, attention_mask=attention_mask_batch, labels=target_labels_batch)
                 feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer))
             else:
-                feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer))
+                feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], self.model, input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer))
         return feature_value_dict
 
 
