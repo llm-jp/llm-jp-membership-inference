@@ -6,6 +6,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from bleurt_pytorch import BleurtConfig, BleurtForSequenceClassification, BleurtTokenizer
 from tqdm import tqdm
 import numpy as np
+
 class MIA:
     def __init__(self, name, type="gray"):
         self.name = name
@@ -147,7 +148,6 @@ class MinKMIA(MIA):
             batch_mink_avg.append(avg)
         return batch_mink_avg
 
-
 class MinKPlusMIA(MIA):
     def __init__(self, k=0.2):
         super().__init__("MinKPlus")
@@ -203,8 +203,9 @@ class DCPDDMIA(MIA):
 class SaMIA(MIA):
     def __init__(self, generation_samples=10, input_length=128, temperature=0.8, generation_batch_size=11, max_mew_tokens=128):
         super().__init__("SAMIA")
+        self.config = BleurtConfig.from_pretrained('lucadiliello/BLEURT-20')
         self.bleurt_model = BleurtForSequenceClassification.from_pretrained(
-            'lucadiliello/BLEURT-20')  # .cuda(args.refer_cuda)
+            'lucadiliello/BLEURT-20')
         self.bleurt_tokenizer = BleurtTokenizer.from_pretrained('lucadiliello/BLEURT-20')
         self.bleurt_model.eval()
         self.gen_samples = generation_samples
@@ -221,8 +222,8 @@ class SaMIA(MIA):
             inputs = {key: value.to(args.refer_cuda) for key, value in inputs.items()}
             res = self.bleurt_model(**inputs).logits.flatten().tolist()
         return res
-
-    def feature_compute(self, model, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer):
+    def feature_compute(self, model, tokenized_inputs, attention_mask, target_labels, tokenizer):
+        #decide the input length, if the input length is less than the max_input_tokens, then use the input length, otherwise use the max_input_tokens
         input_length = int(min(attention_mask.sum(dim=1)) / 2) if (
                     tokenized_inputs["attention_mask"][0].sum() < self.max_input_tokens) else self.max_input_tokens
         full_decoded = [[] for _ in range(self.generation_batch_size)]
