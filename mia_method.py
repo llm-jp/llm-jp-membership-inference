@@ -314,9 +314,9 @@ class CDDMIA(MIA):
                                                       temperature=0,
                                                       max_new_tokens=self.max_new_tokens,
                                                       )
-                decoded_sentences = tokenizer.batch_decode(zero_temp_generation["sequences"],
+                decoded_sentences = tokenizer.batch_decode(zero_temp_generation,
                                                            skip_special_tokens=True)
-                for i in range(zero_temp_generation["sequences"].shape[0]):
+                for i in range(zero_temp_generation.shape[0]):
                     full_decoded[generation_idx].append(decoded_sentences[i])
             else:
                 generations = model.generate(input_ids=tokenized_inputs[:, :input_length],
