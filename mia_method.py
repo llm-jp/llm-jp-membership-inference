@@ -6,6 +6,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from bleurt_pytorch import BleurtConfig, BleurtForSequenceClassification, BleurtTokenizer
 from tqdm import tqdm
 import numpy as np
+import pdb
 
 class MIA:
     def __init__(self, name, type="gray"):
@@ -234,6 +235,7 @@ class SaMIA(MIA):
                                                       temperature=0,
                                                       max_new_tokens=self.max_new_tokens,
                                                       )
+
                 decoded_sentences = tokenizer.batch_decode(zero_temp_generation["sequences"],
                                                            skip_special_tokens=True)
                 for i in range(zero_temp_generation["sequences"].shape[0]):
@@ -317,6 +319,7 @@ class CDDMIA(MIA):
                                                       temperature=0,
                                                       max_new_tokens=self.max_new_tokens,
                                                       )
+                pdb.set_trace()
                 decoded_sentences = tokenizer.batch_decode(zero_temp_generation["sequences"],
                                                            skip_special_tokens=True)
                 for i in range(zero_temp_generation["sequences"].shape[0]):
