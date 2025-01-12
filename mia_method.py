@@ -224,13 +224,12 @@ class SaMIA(MIA):
         return res
     def feature_compute(self, model, tokenized_inputs, attention_mask, target_labels, tokenizer):
         #decide the input length, if the input length is less than the max_input_tokens, then use the input length, otherwise use the max_input_tokens
-        input_length = int(min(attention_mask.sum(dim=1)) / 2) if (
-                    attention_mask[0].sum() < self.max_input_tokens) else self.max_input_tokens
+        input_length = int(min(attention_mask.sum(dim=1)) / 2) if (attention_mask[0].sum() < self.max_input_tokens) else self.max_input_tokens
         full_decoded = [[] for _ in range(self.generation_batch_size)]
         for _ in tqdm(range(self.generation_batch_size)):
             if _ == 0:
-                zero_temp_generation = model.generate(input_ids=tokenized_inputs["input_ids"][:, :input_length],
-                                                      attention_mask=tokenized_inputs["attention_mask"][:,
+                zero_temp_generation = model.generate(input_ids=tokenized_inputs[:, :input_length],
+                                                      attention_mask=attention_mask[:,
                                                                      :input_length],
                                                       temperature=0,
                                                       max_new_tokens=self.max_new_tokens,
@@ -308,12 +307,12 @@ class CDDMIA(MIA):
 
     def feature_compute(self, model, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer):
         input_length = int(min(attention_mask.sum(dim=1)) / 2) if (
-                tokenized_inputs["attention_mask"][0].sum() < self.max_input_tokens) else self.max_input_tokens
+                attention_mask[0].sum() < self.max_input_tokens) else self.max_input_tokens
         full_decoded = [[] for _ in range(self.generation_batch_size)]
         for _ in tqdm(range(self.generation_batch_size)):
             if _ == 0:
-                zero_temp_generation = model.generate(input_ids=tokenized_inputs["input_ids"][:, :input_length],
-                                                      attention_mask=tokenized_inputs["attention_mask"][:,
+                zero_temp_generation = model.generate(input_ids=tokenized_inputs[:, :input_length],
+                                                      attention_mask=attention_mask[:,
                                                                      :input_length],
                                                       temperature=0,
                                                       max_new_tokens=self.max_new_tokens,
