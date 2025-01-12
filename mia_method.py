@@ -230,16 +230,12 @@ class SaMIA(MIA):
         for _ in tqdm(range(self.generation_batch_size)):
             if _ == 0:
                 zero_temp_generation = model.generate(input_ids=tokenized_inputs[:, :input_length],
-                                                      attention_mask=attention_mask[:,
-                                                                     :input_length],
+                                                      attention_mask=attention_mask[:,:input_length],
                                                       temperature=0,
                                                       max_new_tokens=self.max_new_tokens,
                                                       )
-                pdb.set_trace()
-
-                decoded_sentences = tokenizer.batch_decode(zero_temp_generation["sequences"],
-                                                           skip_special_tokens=True)
-                for i in range(zero_temp_generation["sequences"].shape[0]):
+                decoded_sentences = tokenizer.batch_decode(zero_temp_generation, skip_special_tokens=True)
+                for i in range(zero_temp_generation.shape[0]):
                     full_decoded[i].append(decoded_sentences[i])
             else:
                 generations = model.generate(input_ids=tokenized_inputs[:, :input_length],
@@ -250,14 +246,13 @@ class SaMIA(MIA):
                                              top_k=50,
                                              )
                 pdb.set_trace()
-
-                decoded_sentences = self.tokenizer.batch_decode(generations["sequences"], skip_special_tokens=True)
-                for i in range(zero_temp_generation["sequences"].shape[0]):
+                decoded_sentences = self.tokenizer.batch_decode(generations, skip_special_tokens=True)
+                for i in range(zero_temp_generation.shape[0]):
                     full_decoded[i].append(decoded_sentences[i])
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.bleurt_model.to(device)
         samia_value_list = []
-        for batch_idx in range(zero_temp_generation["sequences"].shape[0]):
+        for batch_idx in range(zero_temp_generation.shape[0]):
             bleurt_value = np.array(
                 self.bleurt_score(full_decoded[batch_idx][0], full_decoded[batch_idx][1:],
                              )).mean().item()
