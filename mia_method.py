@@ -17,7 +17,7 @@ class LossMIA(MIA):
     """
     def __init__(self):
         super().__init__("Loss")
-
+        self.type = "gray"
     def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer):
         shift_logits = batch_logits[:, :-1, :].contiguous()
         labels = target_labels[:, 1:].contiguous()
@@ -36,7 +36,7 @@ class ZlibMIA(MIA):
     """
     def __init__(self):
         super().__init__("Zlib")
-
+        self.type = "gray"
     def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         shift_logits = batch_logits[:, :-1, :].contiguous()
         labels = target_labels[:, 1:].contiguous()
@@ -60,9 +60,9 @@ class ReferenceMIA(MIA):
                                                                 ).eval()
         self.refer_tokenizer = AutoTokenizer.from_pretrained(reference_model)
         self.refer_tokenizer.pad_token = self.refer_tokenizer.eos_token
+        self.type = "gray"
     def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         pass
-
 
 class GradientMIA(MIA):
     """
@@ -70,6 +70,7 @@ class GradientMIA(MIA):
     """
     def __init__(self):
         super().__init__("Gradient")
+        self.type = "gray"
     def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         shift_logits = batch_logits[:, :-1, :].contiguous()
         labels = target_labels[:, 1:].contiguous()
@@ -93,6 +94,7 @@ class GradientMIA(MIA):
 class PerplexityMIA(MIA):
     def __init__(self):
         super().__init__("Perplexity")
+        self.type = "gray"
     def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
         shift_logits = batch_logits[:, :-1, :].contiguous()
         labels = target_labels[:, 1:].contiguous()
@@ -109,6 +111,7 @@ class MinKMIA(MIA):
     def __init__(self, k=0.2):
         super().__init__("MinK")
         self.k = k
+        self.type = "gray"
     def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer, k=0.2):
         batch_input_ids = tokenized_inputs[:, 1:].unsqueeze(-1)
         target_labels = tokenized_inputs.clone()
@@ -149,6 +152,7 @@ class MinKPlusMIA(MIA):
     def __init__(self, k=0.2):
         super().__init__("MinKPlus")
         self.k = k
+        self.type = "gray"
     def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer):
         batch_input_ids = tokenized_inputs[:, 1:].unsqueeze(-1)
         target_labels = tokenized_inputs.clone()
@@ -208,6 +212,7 @@ class SaMIA(MIA):
         self.temperature = temperature
         self.generation_batch_size = generation_batch_size
         self.max_new_tokens = max_mew_tokens
+        self.type = "black"
     def bleurt_score(self, reference, generations, args):
         self.bleurt_model.eval()
         with torch.no_grad():
