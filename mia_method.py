@@ -235,6 +235,7 @@ class SaMIA(MIA):
                                                       temperature=0,
                                                       max_new_tokens=self.max_new_tokens,
                                                       )
+                pdb.set_trace()
 
                 decoded_sentences = tokenizer.batch_decode(zero_temp_generation["sequences"],
                                                            skip_special_tokens=True)
@@ -248,6 +249,8 @@ class SaMIA(MIA):
                                              max_new_tokens=self.max_new_tokens,
                                              top_k=50,
                                              )
+                pdb.set_trace()
+
                 decoded_sentences = self.tokenizer.batch_decode(generations["sequences"], skip_special_tokens=True)
                 for i in range(zero_temp_generation["sequences"].shape[0]):
                     full_decoded[i].append(decoded_sentences[i])
@@ -314,12 +317,10 @@ class CDDMIA(MIA):
         for _ in tqdm(range(self.generation_batch_size)):
             if _ == 0:
                 zero_temp_generation = model.generate(input_ids=tokenized_inputs[:, :input_length],
-                                                      attention_mask=attention_mask[:,
-                                                                     :input_length],
+                                                      attention_mask=attention_mask[:,:input_length],
                                                       temperature=0,
                                                       max_new_tokens=self.max_new_tokens,
                                                       )
-                pdb.set_trace()
                 decoded_sentences = tokenizer.batch_decode(zero_temp_generation["sequences"],
                                                            skip_special_tokens=True)
                 for i in range(zero_temp_generation["sequences"].shape[0]):
