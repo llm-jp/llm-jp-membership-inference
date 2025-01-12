@@ -19,7 +19,6 @@ class GPTNeoX(MIAModel):
             f"EleutherAI/pythia-{self.model_size}-deduped",
 
         )
-        self.model = self.model.to_bettertransformer()
         self.tokenizer = AutoTokenizer.from_pretrained(
       f"EleutherAI/pythia-{self.model_size}-deduped",
         revision="step143000",
