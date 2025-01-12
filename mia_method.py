@@ -247,7 +247,7 @@ class SaMIA(MIA):
                                              max_new_tokens=self.max_new_tokens,
                                              top_k=50,
                                              )
-                decoded_sentences = self.tokenizer.batch_decode(generations, skip_special_tokens=True)
+                decoded_sentences = tokenizer.batch_decode(generations, skip_special_tokens=True)
                 for i in range(zero_temp_generation.shape[0]):
                     full_decoded[generation_idx].append(decoded_sentences[i])
         samia_value_list = []
