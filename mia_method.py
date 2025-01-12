@@ -215,20 +215,22 @@ class SaMIA(MIA):
         self.generation_batch_size = generation_batch_size
         self.max_new_tokens = max_mew_tokens
         self.type = "black"
-    def bleurt_score(self, reference, generations, args):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.bleurt_model.to(self.device)
+    def bleurt_score(self, reference, generations):
         self.bleurt_model.eval()
         with torch.no_grad():
             inputs = self.bleurt_tokenizer([reference for i in range(len(generations))], generations, max_length=512,
                                truncation=True, padding="max_length", return_tensors="pt")
-            inputs = {key: value.to(args.refer_cuda) for key, value in inputs.items()}
+            inputs = {key: value.to(self.device) for key, value in inputs.items()}
             res = self.bleurt_model(**inputs).logits.flatten().tolist()
         return res
     def feature_compute(self, model, tokenized_inputs, attention_mask, target_labels, tokenizer):
         #decide the input length, if the input length is less than the max_input_tokens, then use the input length, otherwise use the max_input_tokens
         input_length = int(min(attention_mask.sum(dim=1)) / 2) if (attention_mask[0].sum() < self.max_input_tokens) else self.max_input_tokens
         full_decoded = [[] for _ in range(self.generation_batch_size)]
-        for _ in tqdm(range(self.generation_batch_size)):
-            if _ == 0:
+        for generation_idx in tqdm(range(self.generation_batch_size)):
+            if generation_idx == 0:
                 zero_temp_generation = model.generate(input_ids=tokenized_inputs[:, :input_length],
                                                       attention_mask=attention_mask[:,:input_length],
                                                       temperature=0,
@@ -236,7 +238,7 @@ class SaMIA(MIA):
                                                       )
                 decoded_sentences = tokenizer.batch_decode(zero_temp_generation, skip_special_tokens=True)
                 for i in range(zero_temp_generation.shape[0]):
-                    full_decoded[i].append(decoded_sentences[i])
+                    full_decoded[generation_idx].append(decoded_sentences[i])
             else:
                 generations = model.generate(input_ids=tokenized_inputs[:, :input_length],
                                              attention_mask=attention_mask[:, :input_length],
@@ -245,19 +247,16 @@ class SaMIA(MIA):
                                              max_new_tokens=self.max_new_tokens,
                                              top_k=50,
                                              )
-                pdb.set_trace()
                 decoded_sentences = self.tokenizer.batch_decode(generations, skip_special_tokens=True)
                 for i in range(zero_temp_generation.shape[0]):
-                    full_decoded[i].append(decoded_sentences[i])
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.bleurt_model.to(device)
+                    full_decoded[generation_idx].append(decoded_sentences[i])
         samia_value_list = []
         for batch_idx in range(zero_temp_generation.shape[0]):
-            bleurt_value = np.array(
-                self.bleurt_score(full_decoded[batch_idx][0], full_decoded[batch_idx][1:],
-                             )).mean().item()
+            refer_sentence = full_decoded[0][batch_idx]
+            other_sentences = [full_decoded[i][batch_idx] for i in range(1, len(full_decoded))]
+            pdb.set_trace()
+            bleurt_value = np.array(self.bleurt_score(refer_sentence, other_sentences)).mean().item()
             samia_value_list.append(bleurt_value)
-        self.bleurt_model.cpu()
         return samia_value_list
 
 class CDDMIA(MIA):
