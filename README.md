@@ -24,3 +24,22 @@ Black-box Method:
 
 ### How to run the code
 Please refer to the test.py file for how to run the code.
+
+### Contributing
+Contributions are welcome! Please fork the repository and submit a pull request for any improvements or bug fixes.  
+For any wanted MIA methods that are not implemented, please feel free to open an issue.
+
+### Citation
+If you use this code, please cite the following paper:
+```
+@misc{chen2024statisticalmultiperspectiverevisitingmembership,
+      title={A Statistical and Multi-Perspective Revisiting of the Membership Inference Attack in Large Language Models}, 
+      author={Bowen Chen and Namgi Han and Yusuke Miyao},
+      year={2024},
+      eprint={2412.13475},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2412.13475}, 
+}
+```
+
