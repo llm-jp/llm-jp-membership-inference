@@ -254,8 +254,7 @@ class SaMIA(MIA):
         for batch_idx in range(zero_temp_generation.shape[0]):
             refer_sentence = full_decoded[0][batch_idx]
             other_sentences = [full_decoded[i][batch_idx] for i in range(1, len(full_decoded))]
-            pdb.set_trace()
-            bleurt_value = np.array(self.bleurt_score(refer_sentence, other_sentences)).mean().item()
+            bleurt_value = np.array(self.bleurt_score([refer_sentence], other_sentences)).mean().item()
             samia_value_list.append(bleurt_value)
         return samia_value_list
 
@@ -304,12 +303,12 @@ class CDDMIA(MIA):
             max_length = max(max_length, len(s))
         return num, max_length
 
-    def feature_compute(self, model, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer):
+    def feature_compute(self, model, tokenized_inputs, attention_mask, target_labels, tokenizer):
         input_length = int(min(attention_mask.sum(dim=1)) / 2) if (
                 attention_mask[0].sum() < self.max_input_tokens) else self.max_input_tokens
         full_decoded = [[] for _ in range(self.generation_batch_size)]
-        for _ in tqdm(range(self.generation_batch_size)):
-            if _ == 0:
+        for generation_idx in tqdm(range(self.generation_batch_size)):
+            if generation_idx == 0:
                 zero_temp_generation = model.generate(input_ids=tokenized_inputs[:, :input_length],
                                                       attention_mask=attention_mask[:,:input_length],
                                                       temperature=0,
@@ -318,7 +317,7 @@ class CDDMIA(MIA):
                 decoded_sentences = tokenizer.batch_decode(zero_temp_generation["sequences"],
                                                            skip_special_tokens=True)
                 for i in range(zero_temp_generation["sequences"].shape[0]):
-                    full_decoded[i].append(decoded_sentences[i])
+                    full_decoded[generation_idx].append(decoded_sentences[i])
             else:
                 generations = model.generate(input_ids=tokenized_inputs[:, :input_length],
                                              attention_mask=attention_mask[:, :input_length],
@@ -327,12 +326,14 @@ class CDDMIA(MIA):
                                              max_new_tokens=self.max_new_tokens,
                                              top_k=50,
                                              )
-                decoded_sentences = self.tokenizer.batch_decode(generations["sequences"], skip_special_tokens=True)
-                for i in range(zero_temp_generation["sequences"].shape[0]):
-                    full_decoded[i].append(decoded_sentences[i])
+                decoded_sentences = self.tokenizer.batch_decode(generations, skip_special_tokens=True)
+                for i in range(zero_temp_generation.shape[0]):
+                    full_decoded[generation_idx].append(decoded_sentences[i])
         cdd_value_list = []
-        for batch_idx in range(zero_temp_generation["sequences"].shape[0]):
-            dist, ml = self.get_edit_distance_distribution_star(full_decoded[batch_idx][1:], full_decoded[batch_idx][0],
+        for batch_idx in range(zero_temp_generation.shape[0]):
+            refer_sentence = full_decoded[0][batch_idx]
+            other_sentences = [full_decoded[i][batch_idx] for i in range(1, len(full_decoded))]
+            dist, ml = self.get_edit_distance_distribution_star([refer_sentence], other_sentences,
                                                            tokenizer, length=1000)
             cdd_value_list.append(sum(dist)/len(dist))
         return cdd_value_list
