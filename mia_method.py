@@ -272,7 +272,6 @@ class CDDMIA(MIA):
     def levenshtein_distance(self, str1, str2):
         if len(str1) > len(str2):
             str1, str2 = str2, str1
-
         distances = range(len(str1) + 1)
         for index2, char2 in enumerate(str2):
             new_distances = [index2 + 1]
@@ -282,7 +281,6 @@ class CDDMIA(MIA):
                 else:
                     new_distances.append(1 + min((distances[index1], distances[index1 + 1], new_distances[-1])))
             distances = new_distances
-
         return distances[-1]
 
     def strip_code(self, sample):
