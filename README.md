@@ -16,6 +16,7 @@ Gray-box Method:
 - Reference-based MIA
 - Min-k\% 
 - Max-k\% ++
+- EDA-PAC  
 
 Black-box Method:
 - SaMIA
