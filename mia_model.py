@@ -61,7 +61,7 @@ class GPTNeoX(MIAModel):
                     feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer))
                 else:
                     outputs = self.model(input_ids=input_ids_batch, attention_mask=attention_mask_batch, labels=target_labels_batch)
-                    refer_tokenized = mia_method.refer_tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=self.refer_model.config.max_position_embeddings)
+                    refer_tokenized = mia_method.refer_tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=mia_method.refer_model.config.max_position_embeddings)
                     refer_input_ids = refer_tokenized['input_ids'].to(self.device)
                     refer_attention_mask = refer_tokenized['attention_mask'].to(self.device)
                     refer_target_labels = refer_input_ids.clone().to(self.device)
