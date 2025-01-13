@@ -56,10 +56,9 @@ class ZlibMIA(MIA):
 class ReferenceMIA(MIA):
     def __init__(self, reference_model="StabilityAI/stablelm-base-alpha-3b"):
         super().__init__("Refer")
-        self.refer_model = AutoModelForCausalLM.from_pretrained("StabilityAI/stablelm-base-alpha-3b-v2", trust_remote_code=True)
         self.refer_model = AutoModelForCausalLM.from_pretrained(reference_model,
                                                                 trust_remote_code=True,
-                                                                torch_dtype="auto",
+                                                                torch_dtype=torch.bfloat16,
                                                                 ).eval()
         self.refer_tokenizer = AutoTokenizer.from_pretrained(reference_model)
         self.refer_tokenizer.pad_token = self.refer_tokenizer.eos_token
