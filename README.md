@@ -14,8 +14,8 @@ Gray-box Method:
 - Gradient-based MIA
 - Perplexity-based MIA
 - Reference-based MIA
-- Min-k\% 
-- Max-k\% ++
+- Min-k% 
+- Max-k% ++
 - EDA-PAC
 - Recall 
 
@@ -26,7 +26,7 @@ Black-box Method:
 
 ### How to run the code
 Please refer to the test.py file for how to run the code.
-#### Code　Structure
+#### Code Structure
 The code is structured as follows:  
 - `mia_dataset.py` is the dataset class for the MIA attack. 
 - `mia_model.py` is the attacked model class for the MIA attack.
