@@ -56,6 +56,7 @@ class ZlibMIA(MIA):
 class ReferenceMIA(MIA):
     def __init__(self, reference_model="stabilityai/stablelm-base-alpha-3b-v2"):
         super().__init__("Refer")
+        self.refer_model = AutoModelForCausalLM.from_pretrained("stabilityai/stablelm-base-alpha-3b-v2", trust_remote_code=True)
         self.refer_model = AutoModelForCausalLM.from_pretrained(reference_model,
                                                                 trust_remote_code=True,
                                                                 torch_dtype="auto",
