@@ -1,15 +1,8 @@
 from mia_dataset import WikiMIA
-from mia_model import GPTNeoX, MIAModel
-from mia_method import LossMIA
-from mia_method import MinKMIA
-from mia_method import MinKPlusMIA
-from mia_method import SaMIA
-from mia_method import CDDMIA
-from mia_method import ReferenceMIA
-from mia_method import EDAPACMIA
+from mia_model import MIAModel
+from mia_method import LossMIA, MinKMIA, MinKPlusMIA, SaMIA, CDDMIA, ReferenceMIA, EDAPACMIA
 
 test_data = WikiMIA("WikiMIA", length=64)
-#model = GPTNeoX("70m")
 model = MIAModel("EleutherAI/pythia-70m-deduped")
 eda_pac_method = EDAPACMIA()
 member_feature_value_dict = model.collect_outputs(test_data.member, eda_pac_method)
