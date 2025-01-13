@@ -13,6 +13,7 @@ Gray-box Method:
 - Loss-based MIA
 - Gradient-based MIA
 - Perplexity-based MIA
+- Reference-based MIA
 - Min-k\% 
 - Max-k\% ++
 

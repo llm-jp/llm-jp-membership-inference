@@ -51,13 +51,23 @@ class GPTNeoX(MIAModel):
         # Create a TensorDataset
         dataset = TensorDataset(input_ids, attention_mask, target_labels)
         # Create a DataLoader to yield batches
-        data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+        tensor_data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
         feature_value_dict = {mia_method.name:[]}
-        for input_ids_batch, attention_mask_batch, target_labels_batch in tqdm(data_loader):
+        for (input_ids_batch, attention_mask_batch, target_labels_batch, text) in tqdm(zip(tensor_data_loader, data_loader)):
             # Forward pass through the model
             if mia_method.type == "gray":
-                outputs = self.model(input_ids=input_ids_batch, attention_mask=attention_mask_batch, labels=target_labels_batch)
-                feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer))
+                if mia_method.name != "Refer":
+                    outputs = self.model(input_ids=input_ids_batch, attention_mask=attention_mask_batch, labels=target_labels_batch)
+                    feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer))
+                else:
+                    outputs = self.model(input_ids=input_ids_batch, attention_mask=attention_mask_batch, labels=target_labels_batch)
+                    refer_tokenized = mia_method.refer_tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=self.refer_model.config.max_position_embeddings)
+                    refer_input_ids = refer_tokenized['input_ids'].to(self.device)
+                    refer_attention_mask = refer_tokenized['attention_mask'].to(self.device)
+                    refer_target_labels = refer_input_ids.clone().to(self.device)
+                    refer_outputs = mia_method.refer_model(input_ids=refer_input_ids, attention_mask=refer_attention_mask, labels=refer_target_labels)
+                    feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], refer_outputs[1], input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer,
+                                                                                          refer_input_ids, refer_attention_mask, refer_target_labels))
             else:
                 feature_value_dict[mia_method.name].extend(mia_method.feature_compute(self.model, input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer))
         return feature_value_dict

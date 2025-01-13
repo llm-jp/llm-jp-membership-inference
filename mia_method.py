@@ -54,7 +54,7 @@ class ZlibMIA(MIA):
         return zlib_value_list
 
 class ReferenceMIA(MIA):
-    def __init__(self, reference_model):
+    def __init__(self, reference_model="stabilityai/stablelm-base-alpha-3b-v2"):
         super().__init__("Refer")
         self.refer_model = AutoModelForCausalLM.from_pretrained(reference_model,
                                                                 trust_remote_code=True,
@@ -63,8 +63,33 @@ class ReferenceMIA(MIA):
         self.refer_tokenizer = AutoTokenizer.from_pretrained(reference_model)
         self.refer_tokenizer.pad_token = self.refer_tokenizer.eos_token
         self.type = "gray"
-    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
-        pass
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.refer_model.to(self.device)
+    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,
+                        refer_logits, refer_tokenized_inputs, refer_attention_mask, refer_target_labels):
+        shift_logits = batch_logits[:, :-1, :].contiguous()
+        labels = target_labels[:, 1:].contiguous()
+        loss_fct = CrossEntropyLoss(reduction='none')
+        lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), labels.view(-1))
+        instance_losses = lm_loss.view(-1, shift_logits.size(1))
+        loss_value_list = []
+        for idx, i in enumerate(instance_losses):
+            loss = i.sum() / sum(i != 0)
+            loss_value_list.append(loss.item())
+        shift_logits = refer_logits[:, :-1, :].contiguous()
+        labels = refer_target_labels[:, 1:].contiguous()
+        loss_fct = CrossEntropyLoss(reduction='none')
+        lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), labels.view(-1))
+        instance_losses = lm_loss.view(-1, shift_logits.size(1))
+        refer_loss_value_list = []
+        for idx, i in enumerate(instance_losses):
+            loss = i.sum() / sum(i != 0)
+            refer_loss_value_list.append(loss.item())
+        gap_value_list = []
+        for i, j in zip(loss_value_list, refer_loss_value_list):
+            gap_value_list.append(i-j)
+        return gap_value_list
+
 
 class GradientMIA(MIA):
     """
