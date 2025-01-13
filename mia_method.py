@@ -432,7 +432,7 @@ class EDAPACMIA(MIA):
     def create_pertubation_text(self, batched_text):
         new_prompt_list = []
         for prompt in batched_text:
-            newprompts = self.eda(prompt, alpha=self.aplha, num_aug=self.num_aug)
+            newprompts = self.eda(prompt, alpha=self.alpha, num_aug=self.num_aug)
             new_prompt_list.extend(deepcopy(newprompts))
         return new_prompt_list
 
