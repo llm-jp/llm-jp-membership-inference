@@ -390,6 +390,8 @@ class EDAPACMIA(MIA):
     def __init__(self, alpha=0.3, num_aug=5):
         super().__init__("EDAPAC")
         self.type = "gray"
+        self.alpha = alpha
+        self.num_aug = num_aug
 
     def swap_word(self, new_words):
         random_idx_1 = random.randint(0, len(new_words) - 1)
