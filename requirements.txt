@@ -1,0 +1,7 @@
+torch~=2.0.1
+transformers~=4.47.1
+tqdm~=4.66.4
+zlib~=1.2.13
+numpy~=1.26.4
+datasets~=2.18.0
+bleurt-pytorch~=0.0.1

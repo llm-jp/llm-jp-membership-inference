@@ -58,7 +58,7 @@ class ReferenceMIA(MIA):
         super().__init__("Refer")
         self.refer_model = AutoModelForCausalLM.from_pretrained(reference_model,
                                                                 trust_remote_code=True,
-                                                                torch_dtype=torch.bfloat16,
+                                                                torch_dtype="auto",
                                                                 ).eval()
         self.refer_tokenizer = AutoTokenizer.from_pretrained(reference_model)
         self.refer_tokenizer.pad_token = self.refer_tokenizer.eos_token
