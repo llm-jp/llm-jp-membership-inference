@@ -54,6 +54,9 @@ class ZlibMIA(MIA):
         return zlib_value_list
 
 class ReferenceMIA(MIA):
+    """
+    This method calculates the loss difference between the attacked model and a reference model.
+    """
     def __init__(self, reference_model="StabilityAI/stablelm-base-alpha-3b"):
         super().__init__("Refer")
         self.refer_model = AutoModelForCausalLM.from_pretrained(reference_model,
@@ -119,6 +122,9 @@ class GradientMIA(MIA):
         return grad_value_list
 
 class PerplexityMIA(MIA):
+    """
+    This method calcualtes the perplexity of the model on the input.
+    """
     def __init__(self):
         super().__init__("Perplexity")
         self.type = "gray"
@@ -135,6 +141,10 @@ class PerplexityMIA(MIA):
         return perp_value_list
 
 class MinKMIA(MIA):
+    """
+    This method calculates the bottom k% low probability tokens' average log probability of a given input.
+    Please refer to https://arxiv.org/abs/2310.16789 for more details.
+    """
     def __init__(self, k=0.2):
         super().__init__("MinK")
         self.k = k
@@ -175,6 +185,10 @@ class MinKMIA(MIA):
         return batch_mink_avg
 
 class MinKPlusMIA(MIA):
+    """
+    This method calculates the standarized bottom k% low probability tokens' average log probability of a given input.
+    Please refer to https://arxiv.org/abs/2404.02936
+    """
     def __init__(self, k=0.2):
         super().__init__("MinKPlus")
         self.k = k
@@ -227,6 +241,10 @@ class DCPDDMIA(MIA):
         pass
 
 class SaMIA(MIA):
+    """
+    This method caculates the similarity between the example generated at zero temperature and the examples generated at non-zero temperature.
+    The basic hypothesis is that a trained text should have a higher such similarity.
+    """
     def __init__(self, generation_samples=10, input_length=128, temperature=0.8, generation_batch_size=11, max_mew_tokens=128):
         super().__init__("SAMIA")
         self.config = BleurtConfig.from_pretrained('lucadiliello/BLEURT-20')
@@ -284,6 +302,10 @@ class SaMIA(MIA):
         return samia_value_list
 
 class CDDMIA(MIA):
+    """
+    This method calculates the edit distance between the example generated at zero temperature and the examples generated at non-zero temperature.
+    The difference with SaMIA is that this method uses the edit distance as the similarity metric rather than a neural similarity metric.
+    """
     def __init__(self, generation_samples=10, input_length=128, temperature=0.8, generation_batch_size=11,
                  max_mew_tokens=128):
         super().__init__("CDDMIA")
