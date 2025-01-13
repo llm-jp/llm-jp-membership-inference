@@ -73,7 +73,7 @@ class MIAModel:
                         mia_method.feature_compute(text, self.model, self.tokenizer))
                 elif mia_method.name == "Recall":
                     feature_value_dict[mia_method.name].extend(
-                        mia_method.feature_compute(text, self.model, self.tokenizer))
+                        mia_method.feature_compute(text, self.model, self.tokenizer, avg_length))
             else:
                 feature_value_dict[mia_method.name].extend(
                     mia_method.feature_compute(self.model, input_ids_batch, attention_mask_batch, target_labels_batch,
