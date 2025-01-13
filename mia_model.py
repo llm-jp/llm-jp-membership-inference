@@ -3,7 +3,7 @@ import torch
 import logging
 from tqdm import tqdm
 from torch.utils.data import DataLoader, TensorDataset
-
+import numpy as np
 
 class MIAModel:
     def __init__(self, model_name):
@@ -21,6 +21,7 @@ class MIAModel:
         logging.log(logging.INFO, "Running LLM on Inputted Member/Non-Member Text")
         data_loader = DataLoader(text, batch_size=batch_size, shuffle=False)
         all_texts = [text for batch_texts in data_loader for text in batch_texts]
+        avg_length = int(np.mean([len(self.tokenizer.encode(ex)) for ex in all_texts]))
         # Tokenize all texts at once
         tokenized_inputs = self.tokenizer(
             all_texts,
@@ -68,6 +69,9 @@ class MIAModel:
                                                    refer_outputs[1], refer_input_ids, refer_attention_mask,
                                                    refer_target_labels))
                 elif mia_method.name == "EDAPAC":
+                    feature_value_dict[mia_method.name].extend(
+                        mia_method.feature_compute(text, self.model, self.tokenizer))
+                elif mia_method.name == "Recall":
                     feature_value_dict[mia_method.name].extend(
                         mia_method.feature_compute(text, self.model, self.tokenizer))
             else:

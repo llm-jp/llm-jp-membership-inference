@@ -232,10 +232,92 @@ class MinKPlusMIA(MIA):
         return batch_mink_plus_avg
 
 class RecallMIA(MIA):
-    def __init__(self):
+    def __init__(self, non_member_prefix=None, pass_window=False, num_shots=12):
         super().__init__("Recall")
-    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
-        pass
+        self.pass_window = pass_window
+        self.num_shots = num_shots
+        if non_member_prefix is not None:
+            self.non_member_prefix = non_member_prefix
+        else:
+            self.non_member_prefix = [
+                "Japanese Prime Minister Shigeru Ishiba told U.S. President Joe Biden that his blocking of Nippon Steel's takeover of U.S. Steel raised strong concerns in both countries, local media reported Monday.",
+                "A former U.S. Green Beret who served a prison term for helping former Nissan Motor Co Chairman Carlos Ghosn flee Japan said the country's penal system needs to be reformed to ensure more humane treatment of inmates.",
+                "Antarctic sea ice rebounded in December after a long period of record lows, U.S. scientists said, giving pause to speculation that Earth's frozen continent could be undergoing a permanent change.",
+                "Scientists surveyed 579 residents who reported homes smelling like smoke or chemicals one week after the 2021 Marshall Fire. Of those, 55% had at least one health symptom six months later. Of the 389 who responded to a later survey, 33% had at least one health symptom.",
+                "Shanghai has emerged as the fastest growing destination for attracting international travelers from Asia, according to digital travel platform Agoda. The Chinese metropolis is followed by Jeju (South Korea), Paris (France), Nha Trang (Vietnam) and Fukuoka (Japan)."
+                "Starbucks unveils new Valentine’s Day Frappuccino in Japan.",
+                "8 face charges after employee at girls bar dies from excessive alcohol consumption",
+                "For foreign women who moved to Japan to work as technical intern trainees, taking maternity leave has rarely been a realistic option as pregnancy often means termination of an employment contract or even forced repatriation."
+                "24 dead as fire crews try to corral Los Angeles blazes before winds return this week",
+                "Half of Japan firms prepared in event of Taiwan contingency",
+                "olice in Okazaki City, Aichi Prefecture, have arrested a 65-year-old man on suspicion of abandoning the body of his 85-year-old mother in their apartment in Tokyo in December.",
+                "For Elton John, 'Never Too Late' isn't just a documentary and song — it is a life mantra"
+            ]# this method need some gurannted non-members to initialize.  I randomly choose some texts from Today's news.
+    def process_prefix(self, avg_length, tokenizer):
+        if self.pass_window == True:
+            return self.non_member_prefix
+        max_length = 2048
+        token_counts = [len(tokenizer.encode(shot)) for shot in self.non_member_prefix]
+        target_token_count = avg_length
+        total_tokens = sum(token_counts) + target_token_count
+        if total_tokens <= max_length:
+            return self.non_member_prefix
+        # Determine the maximum number of shots that can fit within the max_length
+        max_shots = 0
+        cumulative_tokens = target_token_count
+        for count in token_counts:
+            if cumulative_tokens + count <= max_length:
+                max_shots += 1
+                cumulative_tokens += count
+            else:
+                break
+        # Truncate the prefix to include only the maximum number of shots
+        truncated_prefix = self.non_member_prefix[-max_shots:]
+        total_shots = max_shots
+        return truncated_prefix
+
+    def loss_compute(self, batch_logits, target_labels):
+        shift_logits = batch_logits[:, :-1, :].contiguous()
+        labels = target_labels[:, 1:].contiguous()
+        loss_fct = CrossEntropyLoss(reduction='none')
+        lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), labels.view(-1))
+        instance_losses = lm_loss.view(-1, shift_logits.size(1))
+        loss_value_list = []
+        for idx, i in enumerate(instance_losses):
+            loss = i.sum() / sum(i != 0)
+            loss_value_list.append(loss.item())
+        return loss_value_list
+
+    def feature_compute(self, text, model, tokenizer, avg_length):
+        recall_collect  = []
+        prefix = self.process_prefix(model, avg_length, tokenizer)
+        tokenized_inputs = tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            padding=True,  # This will pad all sequences to the same length
+            max_length=model.config.max_position_embeddings
+        )
+        outputs = model(input_ids=tokenized_inputs['input_ids'].to(model.device),
+                        attention_mask=tokenized_inputs['attention_mask'].to(model.device),
+                        labels=tokenized_inputs['input_ids'].to(model.device))
+        loss_value_list = self.loss_compute(outputs[1], tokenized_inputs['input_ids'].to(model.device))
+        prefix_batched_text = ["".join(prefix) + " " + text for text in text]
+        prefix_tokenized_inputs = tokenizer(
+            prefix_batched_text,
+            return_tensors="pt",
+            truncation=True,
+            padding=True,  # This will pad all sequences to the same length
+            max_length=model.config.max_position_embeddings
+        )
+        prefix_outputs = model(input_ids=prefix_tokenized_inputs['input_ids'].to(model.device),
+                                 attention_mask=prefix_tokenized_inputs['attention_mask'].to(model.device),
+                                 labels=prefix_tokenized_inputs['input_ids'].to(model.device))
+        prefix_loss_value_list = self.loss_compute(prefix_outputs[1], prefix_tokenized_inputs['input_ids'].to(model.device))
+        recall_collect.extend([-cond_loss_value/-loss_value for loss_value, cond_loss_value in zip(loss_value_list, prefix_loss_value_list)])
+        return recall_collect
+
+
 
 class DCPDDMIA(MIA):
     def __init__(self):
