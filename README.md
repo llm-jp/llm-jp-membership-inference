@@ -49,7 +49,7 @@ For any wanted MIA methods that are not implemented, please feel free to open an
 
 ### Caution
 The analysis results of a MIA method does not mean the text is absolutely trained by the model.  
-The result should be only used as a reference rather than an evidence to support conclusion like "my novel is trained by the model".  
+The result should be only used as a reference rather than an evidence to support conclusion like "my novel is trained by this LLM".  
 Current SotA LLMs usually use a close-source training data, so it is impossible to get the ground truth of the training data. 
 Thus, the MIA is only doing inference rather than a proof.
 
