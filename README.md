@@ -35,7 +35,7 @@ The code is structured as follows:
 You may refer to the test.py for a simple example usage.  
 In general, the codes are used as follows:  
 1. Load the dataset for the MIA attack. This could be a dataset that is already processed in current codes (WikiMIA), but also can be a dataset that you have prepared by your own. A MIA dataset has two list of samples, one is for the member samples and another one is for the non-member samples. You can access those two samples by using `dataset.member` and `datast.non_member`.
-2. Create the target model for the MIA attack. We have already prepared GPTNeox as the initial model. You can use this model as the target model, or you can use your own model. You can refer to mia_model.py for how to create the target model.
+2. Create the target model for the MIA attack. We have already prepared GPTNeox as the initial model in the `test.py`. You can use this model as the target model, or you can use your own model. The mia_model.py` uses AutoModelForCausalLM as the target model, so you can use any model that is compatible with this class. If you are using other models that are not supoorted by this class, you may need to modify the `mia_model.py` to adapt to your model.
 3. Load MIA method from `mia_methods.py`. Some methods have hyparameters, you should refer to this py file to check related hyperparameters as it may have certain influences on the performance of MIA attack.
 4. Run the MIA by using `mia_model.collect_outputs(dataset.member, mia_method)` and `mia_model.collect_outputs(dataset.non_member, mia_method)`. This will return the feature value caculated for every sample in both member and non-member set. Then you can use this feature value to predict the label of the sample.
 
