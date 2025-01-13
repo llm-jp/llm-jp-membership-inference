@@ -56,10 +56,10 @@ class GPTNeoX(MIAModel):
         for ((input_ids_batch, attention_mask_batch, target_labels_batch), text) in tqdm(zip(tensor_data_loader, data_loader)):
             # Forward pass through the model
             if mia_method.type == "gray":
-                if mia_method.name != "Refer":
+                if mia_method.name in ["Loss", "MinK", "MinKPlus", "Perpelexity", "Gradient"]:
                     outputs = self.model(input_ids=input_ids_batch, attention_mask=attention_mask_batch, labels=target_labels_batch)
                     feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer))
-                else:
+                elif mia_method.name == "Refer":
                     outputs = self.model(input_ids=input_ids_batch, attention_mask=attention_mask_batch, labels=target_labels_batch)
                     refer_tokenized = mia_method.refer_tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=mia_method.refer_model.config.max_position_embeddings)
                     refer_input_ids = refer_tokenized['input_ids'].to(self.device)
@@ -68,6 +68,8 @@ class GPTNeoX(MIAModel):
                     refer_outputs = mia_method.refer_model(input_ids=refer_input_ids, attention_mask=refer_attention_mask, labels=refer_target_labels)
                     feature_value_dict[mia_method.name].extend(mia_method.feature_compute(outputs[1], input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer,
                                                                                           refer_outputs[1], refer_input_ids, refer_attention_mask, refer_target_labels))
+                elif mia_method.name == "EDAPAC":
+                    feature_value_dict[mia_method.name].extend(mia_method.feature_compute(text, self.model, self.tokenizer))
             else:
                 feature_value_dict[mia_method.name].extend(mia_method.feature_compute(self.model, input_ids_batch, attention_mask_batch, target_labels_batch, self.tokenizer))
         return feature_value_dict

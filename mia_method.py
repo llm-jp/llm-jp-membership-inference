@@ -7,6 +7,9 @@ from bleurt_pytorch import BleurtConfig, BleurtForSequenceClassification, Bleurt
 from tqdm import tqdm
 import numpy as np
 import pdb
+import random
+from copy import deepcopy
+
 
 class MIA:
     def __init__(self, name, type="gray"):
@@ -383,9 +386,95 @@ class CDDMIA(MIA):
             cdd_value_list.append(sum(dist)/len(dist))
         return cdd_value_list
 
-class PACMIA(MIA):
-    def __init__(self):
-        super().__init__("PAC")
-    def feature_compute(self, batch_logits, tokenized_inputs, attention_mask, target_labels, tokenizer,):
-        pass
+class EDAPACMIA(MIA):
+    def __init__(self, alpha=0.3, num_aug=5):
+        super().__init__("EDAPAC")
+        self.type = "gray"
+
+    def swap_word(self, new_words):
+        random_idx_1 = random.randint(0, len(new_words) - 1)
+        random_idx_2 = random_idx_1
+        counter = 0
+        while random_idx_2 == random_idx_1:
+            random_idx_2 = random.randint(0, len(new_words) - 1)
+            counter += 1
+            if counter > 3:
+                return new_words
+        new_words[random_idx_1], new_words[random_idx_2] = new_words[random_idx_2], new_words[random_idx_1]
+        return new_words
+
+    def random_swap(self, words, n):
+        new_words = words.copy()
+        for _ in range(n):
+            new_words = self.swap_word(new_words)
+        return new_words
+
+    def eda(self, sentence):
+        words = sentence.split(' ')
+        num_words = len(words)
+        augmented_sentences = []
+        if (self.alpha > 0):
+            n_rs = max(1, int(self.alpha * num_words))
+            for _ in range(self.num_aug):
+                a_words = self.random_swap(words, n_rs)
+                augmented_sentences.append(' '.join(a_words))
+        augmented_sentences = [sentence for sentence in augmented_sentences]
+        random.shuffle(augmented_sentences)
+        if self.num_aug >= 1:
+            augmented_sentences = augmented_sentences[:self.num_aug]
+        else:
+            keep_prob = self.num_aug / len(augmented_sentences)
+            augmented_sentences = [s for s in augmented_sentences if random.uniform(0, 1) < keep_prob]
+        return augmented_sentences
+
+    def create_pertubation_text(self, batched_text):
+        new_prompt_list = []
+        for prompt in batched_text:
+            newprompts = self.eda(prompt, alpha=self.aplha, num_aug=self.num_aug)
+            new_prompt_list.extend(deepcopy(newprompts))
+        return new_prompt_list
+
+    def prob_collection(self, prompt, tokenizer, model):
+        all_probs = []
+        tokenized_inputs = tokenizer(prompt,
+                                     return_tensors="pt",
+                                     truncation=True,
+                                     padding=True,
+                                     )
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        tokenized_inputs = {key: val.to(device) for key, val in tokenized_inputs.items()}
+        target_labels = tokenized_inputs["input_ids"].clone().to(device)
+        target_labels[tokenized_inputs["attention_mask"] == 0] = -100
+        outputs = model(**tokenized_inputs, labels=target_labels)
+        logits = outputs[1]
+        probabilities = torch.nn.functional.log_softmax(logits, dim=-1)
+        for example_idx in range(len(prompt)):
+            example_probability = probabilities[example_idx][target_labels[example_idx] != -100]
+            temp_probs = []
+            for token_idx, token_id in enumerate(tokenized_inputs["input_ids"][example_idx]):
+                if token_id != 0:
+                    temp_probs.append(example_probability[token_idx, token_id].item())
+            all_probs.append(temp_probs)
+        return all_probs
+
+    def calculate_Polarized_Distance(self, prob_list: list, ratio_local=0.3, ratio_far=0.05):
+        local_region_length = max(int(len(prob_list) * ratio_local), 1)
+        far_region_length = max(int(len(prob_list) * ratio_far), 1)
+        local_region = np.sort(prob_list)[:local_region_length]
+        far_region = np.sort(prob_list)[::-1][:far_region_length]
+        return np.mean(far_region) - np.mean(local_region)
+
+
+    def feature_compute(self, batched_text, model, tokenizer):
+        eda_pac_collect = []
+        pertubation_text = self.create_pertubation_text(batched_text)
+        all_probs = self.prob_collection(batched_text, model, tokenizer)
+        new_all_probs = self.prob_collection(pertubation_text, model, tokenizer)
+        pds = [self.calculate_Polarized_Distance(prob_list) for prob_list in all_probs]
+        new_pds = [self.calculate_Polarized_Distance(prob_list) for prob_list in new_all_probs]
+        calibrated_pds = [np.mean(new_pds[i:i + self.num_aug]) for i in range(0, len(new_pds), self.num_aug)]
+        eda_pac_value = np.array(pds) - np.array(calibrated_pds)
+        eda_pac_collect.extend(eda_pac_value)
+        return eda_pac_collect
+
 
