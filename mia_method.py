@@ -436,7 +436,7 @@ class EDAPACMIA(MIA):
             new_prompt_list.extend(deepcopy(newprompts))
         return new_prompt_list
 
-    def prob_collection(self, prompt, tokenizer, model):
+    def prob_collection(self, prompt, model, tokenizer):
         all_probs = []
         tokenized_inputs = tokenizer(prompt,
                                      return_tensors="pt",
