@@ -53,7 +53,7 @@ class GPTNeoX(MIAModel):
         # Create a DataLoader to yield batches
         tensor_data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
         feature_value_dict = {mia_method.name:[]}
-        for (input_ids_batch, attention_mask_batch, target_labels_batch, text) in tqdm(zip(tensor_data_loader, data_loader)):
+        for ((input_ids_batch, attention_mask_batch, target_labels_batch), text) in tqdm(zip(tensor_data_loader, data_loader)):
             # Forward pass through the model
             if mia_method.type == "gray":
                 if mia_method.name != "Refer":
