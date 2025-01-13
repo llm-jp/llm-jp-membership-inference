@@ -13,6 +13,8 @@ model = GPTNeoX("70m")
 eda_pac_method = EDAPACMIA()
 member_feature_value_dict = model.collect_outputs(test_data.member, eda_pac_method)
 non_member_feature_value_dict = model.collect_outputs(test_data.non_member, eda_pac_method)
+print(member_feature_value_dict)
+print(non_member_feature_value_dict)
 
 
 
