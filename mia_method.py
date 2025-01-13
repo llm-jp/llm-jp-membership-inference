@@ -290,7 +290,7 @@ class RecallMIA(MIA):
 
     def feature_compute(self, text, model, tokenizer, avg_length):
         recall_collect  = []
-        prefix = self.process_prefix(model, avg_length, tokenizer)
+        prefix = self.process_prefix(avg_length, tokenizer)
         tokenized_inputs = tokenizer(
             text,
             return_tensors="pt",
