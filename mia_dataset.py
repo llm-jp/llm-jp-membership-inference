@@ -37,3 +37,9 @@ class WikiMIA(MIADataset):
         self.member = TextDataset(self.member)
         self.non_member = TextDataset(self.non_member)
 
+class TemporalArixivMIA(MIADataset):
+    def __init__(self):
+        super().__init__("TemporalArixivMIA")
+        self._init_dataset()
+    def _init_dataset(self):
+        pass
