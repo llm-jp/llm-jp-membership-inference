@@ -19,7 +19,8 @@ class MIAModel:
 
     def collect_outputs(self, text, mia_method, batch_size=4):
         logging.log(logging.INFO, "Running LLM on Inputted Member/Non-Member Text")
-        data_loader = DataLoader(text, batch_size=batch_size, shuffle=False)
+        keys_list = list(text.keys())
+        data_loader = DataLoader(text[keys_list[0]], batch_size=batch_size, shuffle=False)
         all_texts = [text for batch_texts in data_loader for text in batch_texts]
         avg_length = int(np.mean([len(self.tokenizer.encode(ex)) for ex in all_texts]))
         # Tokenize all texts at once
