@@ -18,10 +18,13 @@ Gray-box Method:
 - Max-k% ++
 - EDA-PAC
 - Recall 
+- Neighbourhood-based MIA
+
 
 Black-box Method:
 - SaMIA
 - CDD
+- 
 
 
 ### How to run the code
