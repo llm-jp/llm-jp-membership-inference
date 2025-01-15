@@ -27,15 +27,17 @@ class WikiMIA(MIADataset):
         self._init_dataset()
     def _init_dataset(self):
         self.dataset = load_dataset("swj0419/WikiMIA", split=f"WikiMIA_length{self.length}")
-        self.member = []
-        self.non_member = []
+        self.member = {}
+        self.non_member = {}
+        self.member["WikiMIA"] = []
+        self.non_member["WikiMIA"] = []
         for i in range(len(self.dataset)):
             if self.dataset[i]['label'] == 1:
-                self.non_member.append(self.dataset[i]['input'])
+                self.non_member["WikiMIA"].append(self.dataset[i]['input'])
             else:
-                self.member.append(self.dataset[i]['input'])
-        self.member = TextDataset(self.member)
-        self.non_member = TextDataset(self.non_member)
+                self.member["WikiMIA"].append(self.dataset[i]['input'])
+        self.member["WikiMIA"] = TextDataset(self.member)
+        self.non_member["WikiMIA"] = TextDataset(self.non_member)
 
 class TemporalArxiv(MIADataset):
     def __init__(self):
@@ -65,7 +67,7 @@ class MIMIR(MIADataset):
             self.dataset = {}
             for domain in ["arxiv", "dm_mathematics", "github", "hackernews", "pile_cc",
                            "pubmed_central", "wikipedia_(en)", "full_pile", "c4"]:
-                self.dataset[domain] = load_dataset("iamgroot42/mimir", domain, split = "ngram_13_0.8")
+                self.dataset[domain] = load_dataset("iamgroot42/mimir", domain, split="ngram_13_0.8")
                 self.member = {}
                 self.non_member = {}
                 for domain in self.dataset:
