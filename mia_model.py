@@ -49,7 +49,7 @@ class MIAModel:
                     zip(tensor_data_loader, data_loader)):
                 # Forward pass through the model
                 if mia_method.type == "gray":
-                    if mia_method.name in ["Loss", "MinK", "MinKPlus", "Perpelexity", "Gradient"]:
+                    if mia_method.name in ["Loss", "MinK", "MinKPlus", "Perplexity", "Gradient"]:
                         outputs = self.model(input_ids=input_ids_batch, attention_mask=attention_mask_batch,
                                              labels=target_labels_batch)
                         feature_value_dict[mia_method.name][key].extend(
