@@ -24,7 +24,6 @@ Gray-box Method:
 Black-box Method:
 - SaMIA
 - CDD
-- 
 
 
 ### How to run the code
