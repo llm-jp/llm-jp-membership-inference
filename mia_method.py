@@ -238,7 +238,6 @@ class RecallMIA(MIA):
         if non_member_prefix is not None:
             self.non_member_prefix = non_member_prefix
         else:
-
             self.non_member_prefix = [
                 "Japanese Prime Minister Shigeru Ishiba told U.S. President Joe Biden that his blocking of Nippon Steel's takeover of U.S. Steel raised strong concerns in both countries, local media reported Monday.",
                 "A former U.S. Green Beret who served a prison term for helping former Nissan Motor Co Chairman Carlos Ghosn flee Japan said the country's penal system needs to be reformed to ensure more humane treatment of inmates.",
@@ -255,10 +254,10 @@ class RecallMIA(MIA):
             ]# this method need some gurannted non-members to initialize.  I randomly choose some texts from Today's news.
         self.num_shots = num_shots if num_shots <= len(self.non_member_prefix) else len(self.non_member_prefix)
         self.type = "gray"
-    def process_prefix(self, avg_length, tokenizer):
+    def process_prefix(self, avg_length, tokenizer, model):
         if self.pass_window == True:
             return self.non_member_prefix
-        max_length = 2048
+        max_length = model.config.max_position_embeddings
         token_counts = [len(tokenizer.encode(shot)) for shot in self.non_member_prefix]
         target_token_count = avg_length
         total_tokens = sum(token_counts) + target_token_count
@@ -291,9 +290,17 @@ class RecallMIA(MIA):
 
     def feature_compute(self, text, model, tokenizer, avg_length):
         recall_collect  = []
-        prefix = self.process_prefix(avg_length, tokenizer)
         tokenized_inputs = tokenizer(
             text,
+            return_tensors="pt",
+            truncation=True,
+            padding=True,  # This will pad all sequences to the same length
+            max_length=model.config.max_position_embeddings
+        )
+        prefix = self.process_prefix(avg_length, tokenizer, model)
+        prefix_batched_text = ["".join(prefix) + " " + text for text in text]
+        prefix_tokenized_inputs = tokenizer(
+            prefix_batched_text,
             return_tensors="pt",
             truncation=True,
             padding=True,  # This will pad all sequences to the same length
@@ -303,22 +310,14 @@ class RecallMIA(MIA):
                         attention_mask=tokenized_inputs['attention_mask'].to(model.device),
                         labels=tokenized_inputs['input_ids'].to(model.device))
         loss_value_list = self.loss_compute(outputs[1], tokenized_inputs['input_ids'].to(model.device))
-        prefix_batched_text = ["".join(prefix) + " " + text for text in text]
-        prefix_tokenized_inputs = tokenizer(
-            prefix_batched_text,
-            return_tensors="pt",
-            truncation=True,
-            padding=True,  # This will pad all sequences to the same length
-            max_length=model.config.max_position_embeddings
-        )
+
         prefix_outputs = model(input_ids=prefix_tokenized_inputs['input_ids'].to(model.device),
                                  attention_mask=prefix_tokenized_inputs['attention_mask'].to(model.device),
                                  labels=prefix_tokenized_inputs['input_ids'].to(model.device))
         prefix_loss_value_list = self.loss_compute(prefix_outputs[1], prefix_tokenized_inputs['input_ids'].to(model.device))
+
         recall_collect.extend([-cond_loss_value/-loss_value for loss_value, cond_loss_value in zip(loss_value_list, prefix_loss_value_list)])
         return recall_collect
-
-
 
 class DCPDDMIA(MIA):
     def __init__(self):
@@ -437,6 +436,7 @@ class CDDMIA(MIA):
     def feature_compute(self, model, tokenized_inputs, attention_mask, target_labels, tokenizer):
         input_length = int(min(attention_mask.sum(dim=1)) / 2) if (
                 attention_mask[0].sum() < self.max_input_tokens) else self.max_input_tokens
+        pdb.set_trace()
         full_decoded = [[] for _ in range(self.generation_batch_size)]
         for generation_idx in tqdm(range(self.generation_batch_size)):
             if generation_idx == 0:

@@ -2,9 +2,6 @@ import numpy as np
 from scipy.stats import entropy, ks_2samp, kurtosis, wasserstein_distance
 from sklearn.metrics import roc_auc_score
 
-def distribution_similarity(values_list_1, value_list_2):
-    pass
-
 def js_divergence(value_list_1, value_list_2):
     hist1, bin_edges = np.histogram(value_list_1, bins=300, density=True)
     hist2, _ = np.histogram(value_list_2, bins=300, density=True)
