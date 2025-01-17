@@ -19,7 +19,8 @@ Gray-box Method:
 - EDA-PAC
 - Recall 
 - Neighbourhood-based MIA
-- DC-PDD (This requires a external token probability file, which is not provided in this repository due to the size of this file.)
+- DC-PDD 
+  - This requires a external token probability file, which is not provided in this repository due to the size of this file.
 
 
 Black-box Method:
