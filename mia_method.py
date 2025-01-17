@@ -1,3 +1,4 @@
+from statsmodels.genmod.families.links import loglog
 from torch.nn import CrossEntropyLoss
 import zlib
 import torch
@@ -235,7 +236,6 @@ class RecallMIA(MIA):
     def __init__(self, non_member_prefix=None, pass_window=False, num_shots=12):
         super().__init__("Recall")
         self.pass_window = pass_window
-        self.num_shots = num_shots
         if non_member_prefix is not None:
             self.non_member_prefix = non_member_prefix
         else:
@@ -253,6 +253,8 @@ class RecallMIA(MIA):
                 "olice in Okazaki City, Aichi Prefecture, have arrested a 65-year-old man on suspicion of abandoning the body of his 85-year-old mother in their apartment in Tokyo in December.",
                 "For Elton John, 'Never Too Late' isn't just a documentary and song — it is a life mantra"
             ]# this method need some gurannted non-members to initialize.  I randomly choose some texts from Today's news.
+        self.num_shots = num_shots if num_shots <= len(self.non_member_prefix) else len(self.non_member_prefix)
+        self.type = "gray"
     def process_prefix(self, avg_length, tokenizer):
         if self.pass_window == True:
             return self.non_member_prefix
@@ -273,7 +275,6 @@ class RecallMIA(MIA):
                 break
         # Truncate the prefix to include only the maximum number of shots
         truncated_prefix = self.non_member_prefix[-max_shots:]
-        total_shots = max_shots
         return truncated_prefix
 
     def loss_compute(self, batch_logits, target_labels):
