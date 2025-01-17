@@ -97,7 +97,6 @@ class ReferenceMIA(MIA):
             gap_value_list.append(i-j)
         return gap_value_list
 
-
 class GradientMIA(MIA):
     """
     This class computes the gradient of the loss with respect to the model parameters.
@@ -239,6 +238,7 @@ class RecallMIA(MIA):
         if non_member_prefix is not None:
             self.non_member_prefix = non_member_prefix
         else:
+
             self.non_member_prefix = [
                 "Japanese Prime Minister Shigeru Ishiba told U.S. President Joe Biden that his blocking of Nippon Steel's takeover of U.S. Steel raised strong concerns in both countries, local media reported Monday.",
                 "A former U.S. Green Beret who served a prison term for helping former Nissan Motor Co Chairman Carlos Ghosn flee Japan said the country's penal system needs to be reformed to ensure more humane treatment of inmates.",
