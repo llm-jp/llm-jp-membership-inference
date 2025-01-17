@@ -82,7 +82,7 @@ class MIAModel:
                     feature_value_dict[mia_method.name][key].extend(
                         mia_method.feature_compute(self.model, input_ids_batch, attention_mask_batch, target_labels_batch,
                                                    self.tokenizer))
-            return feature_value_dict
+        return feature_value_dict
 
 
 
