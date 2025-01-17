@@ -355,8 +355,7 @@ class SaMIA(MIA):
         return res
     def feature_compute(self, model, tokenized_inputs, attention_mask, target_labels, tokenizer):
         #decide the input length, if the input length is less than the max_input_tokens, then use the input length, otherwise use the max_input_tokens
-        input_length = int(min(attention_mask.sum(dim=1)) / 2) if (attention_mask[0].sum() < self.max_input_tokens) else self.max_input_tokens
-        pdb.set_trace()
+        input_length = self.max_input_tokens if (min(attention_mask.sum(dim=1)) > self.max_input_tokens) else int(min(attention_mask.sum(dim=1)) / 2)
         full_decoded = [[] for _ in range(self.generation_batch_size)]
         for generation_idx in tqdm(range(self.generation_batch_size)):
             if generation_idx == 0:
@@ -435,8 +434,7 @@ class CDDMIA(MIA):
         return num, max_length
 
     def feature_compute(self, model, tokenized_inputs, attention_mask, target_labels, tokenizer):
-        input_length = int(min(attention_mask.sum(dim=1)) / 2) if (
-                attention_mask[0].sum() < self.max_input_tokens) else self.max_input_tokens
+        input_length = self.max_input_tokens if (min(attention_mask.sum(dim=1)) > self.max_input_tokens) else int(min(attention_mask.sum(dim=1)) / 2)
         full_decoded = [[] for _ in range(self.generation_batch_size)]
         for generation_idx in tqdm(range(self.generation_batch_size)):
             if generation_idx == 0:
