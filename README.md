@@ -33,14 +33,17 @@ The code is structured as follows:
 - `mia_dataset.py` is the dataset class for the MIA attack. 
 - `mia_model.py` is the attacked model class for the MIA attack.
 - `mia_methods.py` is the MIA attack methods class.
+- `test.py` is the example running file for the MIA attack.
+- `utils.py` is the utility functions and evaluation codes for the MIA attack.
 
 #### How to use
 You may refer to the test.py for a simple example usage.  
 In general, the codes are used as follows:  
 1. Load the dataset for the MIA attack. This could be a dataset that is already processed in current codes (WikiMIA), but also can be a dataset that you have prepared by your own. A MIA dataset has two list of samples, one is for the member samples and another one is for the non-member samples. You can access those two samples by using `dataset.member` and `datast.non_member`.
-2. Create the target model for the MIA attack. We have already prepared GPTNeox as the initial model in the `test.py`. You can use this model as the target model, or you can use your own model. The mia_model.py` uses AutoModelForCausalLM as the target model, so you can use any model that is compatible with this class. If you are using other models that are not supoorted by this class, you may need to modify the `mia_model.py` to adapt to your model.
+2. Create the target model for the MIA attack. We have already prepared GPTNeox as the initial model in the `test.py`. You can use this model as the target model, or you can use your own model. The `mia_model.py` uses `AutoModelForCausalLM` as the target model, so you can use any model that is compatible with this class. If you are using other models that are not supported by this class, you may need to modify the `mia_model.py` to adapt to your model.
 3. Load MIA method from `mia_methods.py`. Some methods have hyperparameters, you should refer to this py file to check related hyperparameters as it may have certain influences on the performance of MIA attack.
 4. Run the MIA by using `mia_model.collect_outputs(dataset.member, mia_method)` and `mia_model.collect_outputs(dataset.non_member, mia_method)`. This will return the feature value caculated for every sample in both member and non-member set. Then you can use this feature value to predict the label of the sample.
+5. The evaluation codes in the utils.py can be used to evaluate the performance of the MIA attack. You can use `utils.evaluate_mia` to evaluate the performance of the MIA attack. This evaluation codes will return the distribution distance between member and non-member samples, and the ROC-AUC score of the MIA attack.
 
 ### To-do
 1. Add more MIA methods.
