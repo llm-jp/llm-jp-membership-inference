@@ -36,8 +36,8 @@ class WikiMIA(MIADataset):
                 self.non_member["WikiMIA"].append(self.dataset[i]['input'])
             else:
                 self.member["WikiMIA"].append(self.dataset[i]['input'])
-        self.member["WikiMIA"] = TextDataset(self.member)
-        self.non_member["WikiMIA"] = TextDataset(self.non_member)
+        self.member["WikiMIA"] = TextDataset(self.member["WikiMIA"])
+        self.non_member["WikiMIA"] = TextDataset(self.non_member["WikiMIA"])
 
 class TemporalArxiv(MIADataset):
     def __init__(self):
