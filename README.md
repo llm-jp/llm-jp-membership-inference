@@ -20,7 +20,7 @@ Gray-box Method:
 - Recall 
 - Neighbourhood-based MIA
 - DC-PDD 
-  - This requires a external token probability file, which is not provided in this repository due to the size of this file.
+  - This requires a external token probability file, which is not provided in this repository due to the size of this file. You should prepare this file by yourself.
 
 
 Black-box Method:
